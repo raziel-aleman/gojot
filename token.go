@@ -1,31 +1,36 @@
 package gojot
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 )
 
+type User struct {
+	ID    uint64 `json:"user_id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
 // Claims is the struct that will be signed and encoded in the JWT
 type Claims struct {
-	UserID uint64 `json:"user_id"`
+	User User `json:"user"`
 	jwt.RegisteredClaims
 }
 
 // GenerateToken generates a new JWT token with the given user ID
-func GenerateToken(userID uint64, secretKey []byte, expirationTime time.Duration) (string, error) {
+func GenerateToken(user User, secretKey []byte, expirationTime time.Duration) (string, error) {
 	claims := Claims{
-		UserID: userID,
+		User: user,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: &jwt.NumericDate{Time: time.Now().Add(expirationTime)},
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
 	tokenString, err := token.SignedString(secretKey)
 	if err != nil {
 		return "", err
@@ -35,11 +40,7 @@ func GenerateToken(userID uint64, secretKey []byte, expirationTime time.Duration
 }
 
 // ValidateToken validates a JWT token from the request context
-func ValidateToken(ctx context.Context, secretKey []byte) (*Claims, error) {
-	tokenString, err := extractTokenFromHeader(ctx)
-	if err != nil {
-		return nil, err
-	}
+func ValidateToken(tokenString string, secretKey []byte) (*Claims, error) {
 
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -57,17 +58,4 @@ func ValidateToken(ctx context.Context, secretKey []byte) (*Claims, error) {
 	}
 
 	return claims, nil
-}
-
-// extractTokenFromHeader extracts the JWT token from the Authorization header
-func extractTokenFromHeader(ctx context.Context) (string, error) {
-	bearerToken := ctx.Value(ContextKeyToken).(string)
-
-	tokenParts := strings.Split(bearerToken, "Bearer ")
-	if len(tokenParts) != 2 {
-		return "", errors.New("invalid authorization header format")
-	}
-
-	return tokenParts[1], nil
-
 }
