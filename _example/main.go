@@ -17,17 +17,22 @@ import (
 func main() {
 	r := chi.NewRouter()
 
-	// Use the JWT helper middlewares
+	// Add the optional middlewares for the chi router
 	gojot.HelperMiddlewares(r)
+
+	// Initialize rate limiter config
+	gojot.SetRateLimiterConfig(100, 60)
 
 	// Public Routes
 	r.Group(func(r chi.Router) {
+		r.Use(gojot.RateLimiterMiddleware)
 		r.Get("/login", LoginHandler)
 	})
 
 	// Private Routes
 	// Require Authentication
 	r.Group(func(r chi.Router) {
+		r.Use(gojot.RateLimiterMiddleware)
 		r.Use(gojot.AuthMiddleware([]byte("your-secret-key")))
 		r.Get("/protected", ProtectedHandler)
 		r.Get("/logout", LogoutHandler)
@@ -77,7 +82,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set auth cookie with JWT token
-	gojot.SetAuthCookie(&w, token, time.Hour*24)
+	gojot.SetAuthCookie(w, token, time.Hour*24)
 
 	// Redirect to protected endpoint
 	http.Redirect(w, r, "http://localhost:8080/protected", http.StatusFound)
@@ -85,7 +90,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	// Remove auth cookie with JWT token
-	gojot.RemoveAuthCookie(&w)
+	gojot.RemoveAuthCookie(w)
 
 	// Redirect to protected endpoint
 	http.Redirect(w, r, "http://localhost:8080/protected", http.StatusFound)

@@ -40,7 +40,16 @@ func TestAuthMiddlewareWithCookie(t *testing.T) {
 
 	// Create a request and recorder
 	req := httptest.NewRequest("GET", "/protected", nil)
-	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJfaWQiOjEyMzQ1NiwibmFtZSI6IlRlc3QiLCJlbWFpbCI6InRlc3RAZW1haWwuY29tIn0sImV4cCI6MTczNDUwNjQwN30.hqyD6pim7lLedGw-DaoVKuWD458T8Nc83DNDQbiezuM"
+
+	// Assuming you have a user ID from authentication
+	user := User{ID: uint64(123456), Name: "Test", Email: "test@email.com"}
+
+	// Generate the JWT token
+	token, err := GenerateToken(user, []byte("your-secret-key"), time.Hour*24)
+	if err != nil {
+		t.Fatalf("Failed to generate token: %v", err)
+	}
+
 	req.AddCookie(&http.Cookie{
 		Name:     authCookieName, // <- should be any unique key you want
 		Value:    token,          // <- the token, recommend to encode by SecureCookie

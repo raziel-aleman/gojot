@@ -14,13 +14,13 @@ type User struct {
 	Email string `json:"email"`
 }
 
-// Claims is the struct that will be signed and encoded in the JWT
+// Claims is the struct that will be signed and encoded in the JWT.
 type Claims struct {
 	User User `json:"user"`
 	jwt.RegisteredClaims
 }
 
-// GenerateToken generates a new JWT token with the given user ID
+// GenerateToken generates a new JWT token with the given user ID.
 func GenerateToken(user User, secretKey []byte, expirationTime time.Duration) (string, error) {
 	claims := Claims{
 		User: user,
@@ -39,7 +39,7 @@ func GenerateToken(user User, secretKey []byte, expirationTime time.Duration) (s
 	return tokenString, nil
 }
 
-// ValidateToken validates a JWT token from the request context
+// ValidateToken validates a JWT token from the request.
 func ValidateToken(tokenString string, secretKey []byte) (*Claims, error) {
 
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
