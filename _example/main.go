@@ -10,36 +10,25 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/raziel-aleman/gojot"
 )
 
 func main() {
-	r := chi.NewRouter()
 
-	// Add the optional middlewares for the chi router
-	gojot.HelperMiddlewares(r)
+	// Standard library
+	mux := http.NewServeMux()
+	mux.Handle("GET /login",
+		gojot.RateLimiterMiddleware(http.HandlerFunc(LoginHandler)))
+	mux.Handle("GET /protected",
+		gojot.RateLimiterMiddleware(gojot.AuthMiddleware([]byte("your-secret-key"))(http.HandlerFunc(ProtectedHandler))))
+	mux.Handle("GET /logout",
+		gojot.RateLimiterMiddleware(gojot.AuthMiddleware([]byte("your-secret-key"))(http.HandlerFunc(LogoutHandler))))
 
 	// Initialize rate limiter config
 	gojot.SetRateLimiterConfig(100, 60)
 
-	// Public Routes
-	r.Group(func(r chi.Router) {
-		r.Use(gojot.RateLimiterMiddleware)
-		r.Get("/login", LoginHandler)
-	})
-
-	// Private Routes
-	// Require Authentication
-	r.Group(func(r chi.Router) {
-		r.Use(gojot.RateLimiterMiddleware)
-		r.Use(gojot.AuthMiddleware([]byte("your-secret-key")))
-		r.Get("/protected", ProtectedHandler)
-		r.Get("/logout", LogoutHandler)
-	})
-
 	go func() {
-		if err := http.ListenAndServe(":8080", r); err != http.ErrServerClosed {
+		if err := http.ListenAndServe(":8080", mux); err != http.ErrServerClosed {
 			log.Fatalf("HTTP server ListenAndServe: %s", err)
 		}
 	}()

@@ -4,9 +4,6 @@ import (
 	"context"
 	"net/http"
 	"time"
-
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 )
 
 type contextKey string
@@ -32,20 +29,20 @@ func AuthMiddleware(secretKey []byte) func(http.Handler) http.Handler {
 				return
 			}
 
-			ctx := context.WithValue(context.Background(), ContextKeyUser, claims.User)
+			ctx := context.WithValue(r.Context(), ContextKeyUser, claims.User)
 			r = r.WithContext(ctx)
 			next.ServeHTTP(w, r)
 		})
 	}
 }
 
-// HelperMiddlewares adds common middlewares (RequestID, RealIP, Logger, Recoverer) to a Chi router.
-func HelperMiddlewares(r chi.Router) {
-	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-}
+// // HelperMiddlewares adds common middlewares (RequestID, RealIP, Logger, Recoverer) to a Chi router.
+// func HelperMiddlewares(r chi.Router) {
+// 	r.Use(middleware.RequestID)
+// 	r.Use(middleware.RealIP)
+// 	r.Use(middleware.Logger)
+// 	r.Use(middleware.Recoverer)
+// }
 
 // SetAuthCookie sets auth cookie with JWT token for client.
 func SetAuthCookie(w http.ResponseWriter, token string, expirationTime time.Duration) {
